@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fetch Stored Data</title>
+  <title>Data Viewer and Updater</title>
   <style>
     table {
       width: 100%;
       border-collapse: collapse;
+      margin-top: 20px;
     }
     th, td {
       padding: 8px;
@@ -17,13 +18,43 @@
     th {
       background-color: #f2f2f2;
     }
+    .dropdown-container {
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
 
-  <h1>Stored Data</h1>
-  <button onclick="fetchData()">Fetch Data</button>
-  <br><br>
+  <h1>Data Viewer and Updater</h1>
+
+  <!-- Button to fetch all data -->
+  <button onclick="fetchData()">Fetch All Data</button>
+
+  <!-- Dropdowns for viewing and updating specific data -->
+  <div class="dropdown-container">
+    <label for="headNameDropdown">Select Head Name:</label>
+    <select id="headNameDropdown" onchange="onHeadNameSelected()">
+      <option value="">--Select Head Name--</option>
+    </select>
+  </div>
+
+  <!-- Table for SOEs and their budgets -->
+  <div id="soeDetails" style="display: none;">
+    <h2>SOE Details</h2>
+    <table id="soeTable">
+      <thead>
+        <tr>
+          <th>SOEs Name</th>
+          <th>Sanctioned Budget</th>
+          <th>Revised Estimate</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows will be dynamically added here -->
+      </tbody>
+    </table>
+  </div>
 
   <table id="dataTable">
     <thead>
@@ -31,7 +62,7 @@
         <th>Head Name</th>
         <th>Head Type</th>
         <th>ITDP Name</th>
-        <th>SOES Name</th>
+        <th>SOEs Name</th>
         <th>Sanctioned Budget</th>
         <th>Revised Estimate</th>
         <th>Department Code</th>
@@ -46,37 +77,132 @@
   </table>
 
   <script>
+    let allData = []; // To store all fetched data
+
+    // Fetch all data and populate the main table and dropdown
     function fetchData() {
-      fetch('https://script.google.com/macros/s/AKfycbzV8kP6xsZ7GI1Iz79fD9ZllBHNKug8nI_8sDtM9UlpZSb6ggaqp6NnBYZhfc-LiBvB-w/exec')  // Replace with your Google Apps Script URL
-        .then(response => response.json())
+      fetch('https://script.google.com/macros/s/AKfycbzV8kP6xsZ7GI1Iz79fD9ZllBHNKug8nI_8sDtM9UlpZSb6ggaqp6NnBYZhfc-LiBvB-w/exec') // Replace with your Google Apps Script URL
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok: ' + response.statusText);
+          }
+          return response.json();
+        })
         .then(data => {
           if (data.status === 'success') {
-            const dataTable = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
-            dataTable.innerHTML = '';  // Clear any existing rows
-            data.data.forEach(row => {
-              const newRow = dataTable.insertRow();
-              newRow.innerHTML = `
-                <td>${row.headName}</td>
-                <td>${row.headType}</td>
-                <td>${row.itdpName}</td>
-                <td>${row.soesName}</td>
-                <td>${row.sanctionedBudget}</td>
-                <td>${row.revisedEstimate}</td>
-                <td>${row.departmentCode}</td>
-                <td>${row.departmentName}</td>
-                <td>${row.schemeName}</td>
-                <td>${new Date(row.date).toLocaleString()}</td>
-              `;
-            });
+            allData = data.data; // Save data for later use
+            populateMainTable();
+            populateHeadNameDropdown();
           } else {
             alert('Error fetching data: ' + data.message);
           }
         })
         .catch(error => {
           console.error('Error:', error);
-          alert('Error fetching data');
+          alert('Error fetching data. Please check the console for details.');
         });
     }
+
+    // Populate the main data table
+    function populateMainTable() {
+      const dataTable = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+      dataTable.innerHTML = ''; // Clear any existing rows
+      allData.forEach(row => {
+        const newRow = dataTable.insertRow();
+        newRow.innerHTML = `
+          <td>${row.headName}</td>
+          <td>${row.headType}</td>
+          <td>${row.itdpName}</td>
+          <td>${row.soesName}</td>
+          <td>${row.sanctionedBudget}</td>
+          <td>${row.revisedEstimate}</td>
+          <td>${row.departmentCode}</td>
+          <td>${row.departmentName}</td>
+          <td>${row.schemeName}</td>
+          <td>${new Date(row.date).toLocaleString()}</td>
+        `;
+      });
+    }
+
+    // Populate the Head Name dropdown
+    function populateHeadNameDropdown() {
+      const headNameDropdown = document.getElementById('headNameDropdown');
+      const uniqueHeadNames = [...new Set(allData.map(row => row.headName))];
+      uniqueHeadNames.forEach(headName => {
+        const option = document.createElement('option');
+        option.value = headName;
+        option.textContent = headName;
+        headNameDropdown.appendChild(option);
+      });
+    }
+
+    // Handle Head Name selection
+    function onHeadNameSelected() {
+      const selectedHeadName = document.getElementById('headNameDropdown').value;
+      if (!selectedHeadName) {
+        document.getElementById('soeDetails').style.display = 'none';
+        return;
+      }
+
+      // Filter data for the selected Head Name
+      const filteredData = allData.filter(row => row.headName === selectedHeadName);
+      populateSOETable(filteredData);
+      document.getElementById('soeDetails').style.display = 'block';
+    }
+
+    // Populate the SOE table for the selected Head Name
+    function populateSOETable(filteredData) {
+      const soeTable = document.getElementById('soeTable').getElementsByTagName('tbody')[0];
+      soeTable.innerHTML = ''; // Clear any existing rows
+
+      filteredData.forEach(row => {
+        const newRow = soeTable.insertRow();
+        newRow.innerHTML = `
+          <td>${row.soesName}</td>
+          <td>${row.sanctionedBudget}</td>
+          <td><input type="number" value="${row.revisedEstimate || ''}" /></td>
+          <td><button onclick="updateRevisedEstimate('${row.soesName}', this)">Update</button></td>
+        `;
+      });
+    }
+
+    // Update the Revised Estimate for a specific SOE
+    // Update the Revised Estimate for a specific SOE
+    function updateRevisedEstimate(soesName, button) {
+        const revisedEstimate = button.parentElement.parentElement.querySelector('input').value;
+            
+        // Find the row where this SOEs is located
+        const selectedHeadName = document.getElementById('headNameDropdown').value;
+        const rowToUpdate = allData.find(row => row.headName === selectedHeadName && row.soesName === soesName);
+
+        // Perform the update (send to server)
+        if (rowToUpdate) {
+            // Make a POST request to update the revised estimate in the Google Sheet
+            fetch('https://script.google.com/macros/s/AKfycbzV8kP6xsZ7GI1Iz79fD9ZllBHNKug8nI_8sDtM9UlpZSb6ggaqp6NnBYZhfc-LiBvB-w/exec', { // Replace with your Google Apps Script URL
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'updateRevisedEstimate',
+                headName: rowToUpdate.headName,
+                soesName: soesName,
+                revisedEstimate: revisedEstimate
+            })
+            })
+            .then(response => response.json())
+            .then(data => {
+            if (data.status === 'success') {
+                alert(`Updated ${soesName} with Revised Estimate: ${revisedEstimate}`);
+                // Optionally, update the UI here to reflect the change
+            } else {
+                alert('Error updating revised estimate: ' + data.message);
+            }
+            })
+            .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating revised estimate. Please check the console for details.');
+            });
+        }
+        }
   </script>
 
 </body>
