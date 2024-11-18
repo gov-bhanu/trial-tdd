@@ -21,6 +21,10 @@
     .dropdown-container {
       margin-top: 20px;
     }
+    .error-message {
+      color: red;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -37,6 +41,9 @@
       <option value="">--Select Head Name--</option>
     </select>
   </div>
+
+  <!-- Error Message Section -->
+  <div id="errorMessage" class="error-message" style="display: none;"></div>
 
   <!-- Table for SOEs and their budgets -->
   <div id="soeDetails" style="display: none;">
@@ -139,10 +146,16 @@
     // Handle Head Name selection
     function onHeadNameSelected() {
       const selectedHeadName = document.getElementById('headNameDropdown').value;
+      const errorMessageDiv = document.getElementById('errorMessage');
+      
       if (!selectedHeadName) {
         document.getElementById('soeDetails').style.display = 'none';
+        errorMessageDiv.style.display = 'block';
+        errorMessageDiv.textContent = 'Please select a Head Name.';
         return;
       }
+
+      errorMessageDiv.style.display = 'none'; // Hide error message when selection is made
 
       // Filter data for the selected Head Name
       const filteredData = allData.filter(row => row.headName === selectedHeadName);
@@ -160,17 +173,22 @@
         newRow.innerHTML = `
           <td>${row.soesName}</td>
           <td>${row.sanctionedBudget}</td>
-          <td><input type="number" value="${row.revisedEstimate || ''}" /></td>
+          <td><input type="number" value="${row.revisedEstimate || ''}" min="0" step="any" /></td>
           <td><button onclick="updateRevisedEstimate('${row.soesName}', this)">Update</button></td>
         `;
       });
     }
 
     // Update the Revised Estimate for a specific SOE
-    // Update the Revised Estimate for a specific SOE
     function updateRevisedEstimate(soesName, button) {
         const revisedEstimate = button.parentElement.parentElement.querySelector('input').value;
-            
+        
+        // Validate that the input is a valid number
+        if (isNaN(revisedEstimate) || revisedEstimate === '') {
+            alert('Please enter a valid number for Revised Estimate.');
+            return;
+        }
+
         // Find the row where this SOEs is located
         const selectedHeadName = document.getElementById('headNameDropdown').value;
         const rowToUpdate = allData.find(row => row.headName === selectedHeadName && row.soesName === soesName);
@@ -190,19 +208,29 @@
             })
             .then(response => response.json())
             .then(data => {
-            if (data.status === 'success') {
-                alert(`Updated ${soesName} with Revised Estimate: ${revisedEstimate}`);
-                // Optionally, update the UI here to reflect the change
-            } else {
-                alert('Error updating revised estimate: ' + data.message);
-            }
+                if (data.status === 'success') {
+                    alert(`Updated ${soesName} with Revised Estimate: ${revisedEstimate}`);
+                    
+                    // Update the client-side data and UI
+                    rowToUpdate.revisedEstimate = revisedEstimate; // Update in allData
+                    
+                    // Update the SOE table UI directly
+                    const soeTable = document.getElementById('soeTable').getElementsByTagName('tbody')[0];
+                    const rows = Array.from(soeTable.rows);
+                    const updatedRow = rows.find(row => row.cells[0].textContent === soesName);
+                    if (updatedRow) {
+                        updatedRow.cells[2].querySelector('input').value = revisedEstimate;
+                    }
+                } else {
+                    alert('Error updating revised estimate: ' + data.message);
+                }
             })
             .catch(error => {
-            console.error('Error:', error);
-            alert('Error updating revised estimate. Please check the console for details.');
+                console.error('Error:', error);
+                alert('Error updating revised estimate. Please check the console for details.');
             });
         }
-        }
+    }
   </script>
 
 </body>
