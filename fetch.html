@@ -198,13 +198,9 @@
             // Make a POST request to update the revised estimate in the Google Sheet
             fetch('https://script.google.com/macros/s/AKfycbzwwMKl85N_0EvllTXG37NYEysnOtXoW2YvySaMhiIJZ0zta6tsRPLSiMZL3LX5C1l-NQ/exec', { // Replace with your Google Apps Script URL
             method: 'POST',
-            redirect: "follow",
+            mode: 'no-cors',
             headers: { 
-              'Content-Type': 'application/json',
-              'Accept': '*/*',
-              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-              'Access-Control-Allow-Methods': 'POST',
-              'Access-Control-Allow-Origin': 'https://gov-bhanu.github.io/'
+              'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 headName: rowToUpdate.headName,
@@ -212,29 +208,36 @@
                 revisedEstimate: revisedEstimate
             })
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert(`Updated ${soesName} with Revised Estimate: ${revisedEstimate}`);
+
+            setTimeout(() => {
+              alert('Update Successfull')
+              fetchData()
+            }, 2000)
+
+            // .then(response => { console.log('response : ',response);return response.json()})
+            // .then(data => {
+            //     console.log('data : ', data)
+            //     if (data.status === 'success') {
+            //         alert(`Updated ${soesName} with Revised Estimate: ${revisedEstimate}`);
                     
-                    // Update the client-side data and UI
-                    rowToUpdate.revisedEstimate = revisedEstimate; // Update in allData
+            //         // Update the client-side data and UI
+            //         rowToUpdate.revisedEstimate = revisedEstimate; // Update in allData
                     
-                    // Update the SOE table UI directly
-                    const soeTable = document.getElementById('soeTable').getElementsByTagName('tbody')[0];
-                    const rows = Array.from(soeTable.rows);
-                    const updatedRow = rows.find(row => row.cells[0].textContent === soesName);
-                    if (updatedRow) {
-                        updatedRow.cells[2].querySelector('input').value = revisedEstimate;
-                    }
-                } else {
-                    alert('Error updating revised estimate: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error updating revised estimate. Please check the console for details.');
-            });
+            //         // Update the SOE table UI directly
+            //         const soeTable = document.getElementById('soeTable').getElementsByTagName('tbody')[0];
+            //         const rows = Array.from(soeTable.rows);
+            //         const updatedRow = rows.find(row => row.cells[0].textContent === soesName);
+            //         if (updatedRow) {
+            //             updatedRow.cells[2].querySelector('input').value = revisedEstimate;
+            //         }
+            //     } else {
+            //         alert('Error updating revised estimate: ' + data.message);
+            //     }
+            // })
+            // .catch(error => {
+            //     console.error('Error:', error);
+            //     alert('Error updating revised estimate. Please check the console for details.');
+            // });
         }
     }
   </script>
