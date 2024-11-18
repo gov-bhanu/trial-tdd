@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Viewer and Updater</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .dropdown-container {
+      margin-top: 20px;
+    }
+    .error-message {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Data Viewer and Updater</h1>
+
+  <!-- Button to fetch all data -->
+  <button onclick="fetchData()">Fetch All Data</button>
+
+  <!-- Dropdowns for viewing and updating specific data -->
+  <div class="dropdown-container">
+    <label for="headNameDropdown">Select Head Name:</label>
+    <select id="headNameDropdown" onchange="onHeadNameSelected()">
+      <option value="">--Select Head Name--</option>
+    </select>
+  </div>
+
+  <!-- Error Message Section -->
+  <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+  <!-- Table for SOEs and their budgets -->
+  <div id="soeDetails" style="display: none;">
+    <h2>SOE Details</h2>
+    <table id="soeTable">
+      <thead>
+        <tr>
+          <th>SOEs Name</th>
+          <th>Sanctioned Budget</th>
+          <th>Revised Estimate</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows will be dynamically added here -->
+      </tbody>
+    </table>
+  </div>
+
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>Head Name</th>
+        <th>Head Type</th>
+        <th>ITDP Name</th>
+        <th>SOEs Name</th>
+        <th>Sanctioned Budget</th>
+        <th>Revised Estimate</th>
+        <th>Department Code</th>
+        <th>Department Name</th>
+        <th>Scheme Name</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data rows will be inserted here -->
+    </tbody>
+  </table>
+
+  <script>
+    let allData = []; // To store all fetched data
+
+    // Fetch all data and populate the main table and dropdown
+    function fetchData() {
+      fetch('https://script.google.com/macros/s/AKfycbyQt-nStgzL8HPUe0fUG0UtH-76zfdPsyQ9E-WOmqQV37KBIAsqNyPVHoUJISazydcVTA/exec') // Replace with your Google Apps Script URL
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok: ' + response.statusText);
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.status === 'success') {
+            allData = data.data; // Save data for later use
+            populateMainTable();
+            populateHeadNameDropdown();
+          } else {
+            alert('Error fetching data: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error fetching data. Please check the console for details.');
+        });
+    }
+
+    // Populate the main data table
+    function populateMainTable() {
+      const dataTable = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+      dataTable.innerHTML = ''; // Clear any existing rows
+      allData.forEach(row => {
+        const newRow = dataTable.insertRow();
+        newRow.innerHTML = `
+          <td>${row.headName}</td>
+          <td>${row.headType}</td>
+          <td>${row.itdpName}</td>
+          <td>${row.soesName}</td>
+          <td>${row.sanctionedBudget}</td>
+          <td>${row.revisedEstimate}</td>
+          <td>${row.departmentCode}</td>
+          <td>${row.departmentName}</td>
+          <td>${row.schemeName}</td>
+          <td>${new Date(row.date).toLocaleString()}</td>
+        `;
+      });
+    }
+
+    // Populate the Head Name dropdown
+    function populateHeadNameDropdown() {
+      const headNameDropdown = document.getElementById('headNameDropdown');
+      const uniqueHeadNames = [...new Set(allData.map(row => row.headName))];
+      uniqueHeadNames.forEach(headName => {
+        const option = document.createElement('option');
+        option.value = headName;
+        option.textContent = headName;
+        headNameDropdown.appendChild(option);
+      });
+    }
+
+    // Handle Head Name selection
+    function onHeadNameSelected() {
+      const selectedHeadName = document.getElementById('headNameDropdown').value;
+      const errorMessageDiv = document.getElementById('errorMessage');
+      
+      if (!selectedHeadName) {
+        document.getElementById('soeDetails').style.display = 'none';
+        errorMessageDiv.style.display = 'block';
+        errorMessageDiv.textContent = 'Please select a Head Name.';
+        return;
+      }
+
+      errorMessageDiv.style.display = 'none'; // Hide error message when selection is made
+
+      // Filter data for the selected Head Name
+      const filteredData = allData.filter(row => row.headName === selectedHeadName);
+      populateSOETable(filteredData);
+      document.getElementById('soeDetails').style.display = 'block';
+    }
+
+    // Populate the SOE table for the selected Head Name
+    function populateSOETable(filteredData) {
+      const soeTable = document.getElementById('soeTable').getElementsByTagName('tbody')[0];
+      soeTable.innerHTML = ''; // Clear any existing rows
+
+      filteredData.forEach(row => {
+        const newRow = soeTable.insertRow();
+        newRow.innerHTML = `
+          <td>${row.soesName}</td>
+          <td>${row.sanctionedBudget}</td>
+          <td><input type="number" value="${row.revisedEstimate || ''}" min="0" step="any" /></td>
+          <td><button onclick="updateRevisedEstimate('${row.soesName}', this)">Update</button></td>
+        `;
+      });
+    }
+
+    // Update the Revised Estimate for a specific SOE
+    function updateRevisedEstimate(soesName, button) {
+        const revisedEstimate = button.parentElement.parentElement.querySelector('input').value;
+        
+        // Validate that the input is a valid number
+        if (isNaN(revisedEstimate) || revisedEstimate === '') {
+            alert('Please enter a valid number for Revised Estimate.');
+            return;
+        }
+
+        // Find the row where this SOEs is located
+        const selectedHeadName = document.getElementById('headNameDropdown').value;
+        const rowToUpdate = allData.find(row => row.headName === selectedHeadName && row.soesName === soesName);
+
+        // Perform the update (send to server)
+        if (rowToUpdate) {
+            // Make a POST request to update the revised estimate in the Google Sheet
+            fetch('https://script.google.com/macros/s/AKfycbyQt-nStgzL8HPUe0fUG0UtH-76zfdPsyQ9E-WOmqQV37KBIAsqNyPVHoUJISazydcVTA/exec', { // Replace with your Google Apps Script URL
+            method: 'POST',
+            redirect: "follow",
+            headers: { 
+              'Content-Type': 'application/json',
+              'Accept': '*/*',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+              'Access-Control-Allow-Methods': 'POST',
+              'Access-Control-Allow-Origin': 'https://gov-bhanu.github.io/'
+            },
+            body: JSON.stringify({
+                headName: rowToUpdate.headName,
+                soesName: soesName,
+                revisedEstimate: revisedEstimate
+            })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(`Updated ${soesName} with Revised Estimate: ${revisedEstimate}`);
+                    
+                    // Update the client-side data and UI
+                    rowToUpdate.revisedEstimate = revisedEstimate; // Update in allData
+                    
+                    // Update the SOE table UI directly
+                    const soeTable = document.getElementById('soeTable').getElementsByTagName('tbody')[0];
+                    const rows = Array.from(soeTable.rows);
+                    const updatedRow = rows.find(row => row.cells[0].textContent === soesName);
+                    if (updatedRow) {
+                        updatedRow.cells[2].querySelector('input').value = revisedEstimate;
+                    }
+                } else {
+                    alert('Error updating revised estimate: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating revised estimate. Please check the console for details.');
+            });
+        }
+    }
+  </script>
+
+</body>
+</html>
