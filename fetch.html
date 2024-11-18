@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fetch Stored Data</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Stored Data</h1>
+  <button onclick="fetchData()">Fetch Data</button>
+  <br><br>
+
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>Head Name</th>
+        <th>Head Type</th>
+        <th>ITDP Name</th>
+        <th>SOES Name</th>
+        <th>Sanctioned Budget</th>
+        <th>Revised Estimate</th>
+        <th>Department Code</th>
+        <th>Department Name</th>
+        <th>Scheme Name</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data rows will be inserted here -->
+    </tbody>
+  </table>
+
+  <script>
+    function fetchData() {
+      fetch('https://script.google.com/macros/s/AKfycbzV8kP6xsZ7GI1Iz79fD9ZllBHNKug8nI_8sDtM9UlpZSb6ggaqp6NnBYZhfc-LiBvB-w/exec')  // Replace with your Google Apps Script URL
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            const dataTable = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
+            dataTable.innerHTML = '';  // Clear any existing rows
+            data.data.forEach(row => {
+              const newRow = dataTable.insertRow();
+              newRow.innerHTML = `
+                <td>${row.headName}</td>
+                <td>${row.headType}</td>
+                <td>${row.itdpName}</td>
+                <td>${row.soesName}</td>
+                <td>${row.sanctionedBudget}</td>
+                <td>${row.revisedEstimate}</td>
+                <td>${row.departmentCode}</td>
+                <td>${row.departmentName}</td>
+                <td>${row.schemeName}</td>
+                <td>${new Date(row.date).toLocaleString()}</td>
+              `;
+            });
+          } else {
+            alert('Error fetching data: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error fetching data');
+        });
+    }
+  </script>
+
+</body>
+</html>
