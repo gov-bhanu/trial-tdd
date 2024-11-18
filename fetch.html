@@ -81,7 +81,7 @@
 
     // Fetch all data and populate the main table and dropdown
     function fetchData() {
-      fetch('https://script.google.com/macros/s/AKfycbzV8kP6xsZ7GI1Iz79fD9ZllBHNKug8nI_8sDtM9UlpZSb6ggaqp6NnBYZhfc-LiBvB-w/exec') // Replace with your Google Apps Script URL
+      fetch('https://script.google.com/macros/s/AKfycbyBgac9XEHY0ABT6JYtnEZaDRxSU7HCIruQW9maPT61r-FyF0DfIru7PzxMo_hZ3su_Bg/exec') // Replace with your Google Apps Script URL
         .then(response => {
           if (!response.ok) {
             throw new Error('Network response was not ok: ' + response.statusText);
@@ -178,7 +178,7 @@
         // Perform the update (send to server)
         if (rowToUpdate) {
             // Make a POST request to update the revised estimate in the Google Sheet
-            fetch('https://script.google.com/macros/s/AKfycbzV8kP6xsZ7GI1Iz79fD9ZllBHNKug8nI_8sDtM9UlpZSb6ggaqp6NnBYZhfc-LiBvB-w/exec', { // Replace with your Google Apps Script URL
+            fetch('https://script.google.com/macros/s/AKfycbyBgac9XEHY0ABT6JYtnEZaDRxSU7HCIruQW9maPT61r-FyF0DfIru7PzxMo_hZ3su_Bg/exec', { // Replace with your Google Apps Script URL
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
